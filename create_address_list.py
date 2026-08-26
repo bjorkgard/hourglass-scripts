@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""Version 3. Skapa en svensk adresslista i PDF-format från en Hourglass-CSV.
+"""Skapa en svensk adresslista i PDF-format från en Hourglass-CSV.
 
 Kör:
-    python3 skapa_adresslista.py hourglass-contactlist.csv
+    python3 create_address_list.py hourglass-contactlist.csv
 
 Beroende:
     python3 -m pip install reportlab
