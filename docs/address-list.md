@@ -81,6 +81,7 @@ CSV-filen måste innehålla dessa kolumner:
 - `lastname`
 - `firstname`
 - `fullname`
+- `birth`
 - `email`
 - `cellphone`
 - `homephone`
@@ -107,5 +108,6 @@ Skriptet fyller automatiskt i kolumnen `Övrigt` baserat på Hourglass-data:
 
 ## Resultat
 
-När skriptet är klart skrivs vald layout och sökvägen till den skapade PDF-filen
-ut i terminalen.
+När skriptet är klart skrivs vald layout, sökvägen till den skapade PDF-filen
+och sökvägen till TXT-rapporten ut i terminalen. Rapporten jämför med senaste
+lokala historik och använder `fullname` + `birth` som personnyckel.

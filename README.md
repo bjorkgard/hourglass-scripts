@@ -44,6 +44,11 @@ python3 create_all.py
 ```
 
 PDF-filerna skapas i `out/`.
+Samtidigt skapas en TXT-rapport, `Rapport_ÅÅÅÅ-MM-DD.txt`, som jämför
+kontaktuppgifterna med senaste körningen och visar nya, uppdaterade och
+borttagna namn. Jämförelsen använder `fullname` + `birth` som personnyckel.
+Den lokala historiken sparas i `history/contact_history.json` och ignoreras av
+git.
 
 Första gången frågar kommandot efter de uppgifter som behövs för adresslistan
 och sparar dem i en lokal `config.json`. Nästa gång används config-filen
@@ -54,6 +59,9 @@ python3 create_all.py --reconfigure
 ```
 
 Om `in/` innehåller flera CSV-filer frågar kommandot vilken som ska användas.
+
+När du kör adresslistan direkt med `create_address_list.py` skapas samma typ av
+rapport bredvid PDF-filen.
 
 ## Tester
 

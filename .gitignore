@@ -3,6 +3,7 @@ example_csv/
 tmp/
 output/
 config.json
+history/
 in/*
 !in/.gitkeep
 out/*

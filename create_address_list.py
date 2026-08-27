@@ -20,6 +20,8 @@ from datetime import date
 from pathlib import Path
 from typing import Dict, Iterable, List, Tuple
 
+from report_history import skapa_rapport
+
 try:
     from reportlab.lib import colors
     from reportlab.lib.enums import TA_CENTER, TA_LEFT
@@ -126,6 +128,8 @@ DESIGNER = {
     },
 }
 
+HISTORY_FIL = "history/contact_history.json"
+
 
 class NumreradCanvas(canvas.Canvas):
     """Canvas som kan skriva 'Sida X av Y' i sidfoten."""
@@ -191,6 +195,7 @@ def las_csv(sokvag: Path) -> List[Dict[str, str]]:
         "lastname",
         "firstname",
         "fullname",
+        "birth",
         "email",
         "cellphone",
         "homephone",
@@ -277,6 +282,12 @@ def fraga_kretstillsyningsman() -> Dict[str, str]:
         "telefon": input("Telefon: ").strip(),
         "epost": fraga_epost(),
     }
+
+
+def history_path_for_output(output: Path) -> Path:
+    """Placera historiken bredvid out/ när adresslistan skrivs i en out-mapp."""
+    root = output.parent.parent if output.parent.name == "out" else output.parent
+    return root / HISTORY_FIL
 
 
 def ovrligt(rad: Dict[str, str]) -> str:
@@ -611,6 +622,7 @@ def main():
 
     try:
         skapa_pdf(poster, output, designval, kt, gruppordning)
+        rapport = skapa_rapport(poster, history_path_for_output(output), output.parent)
     except Exception as exc:
         print(f"\nKunde inte skapa PDF-filen: {exc}")
         sys.exit(1)
@@ -618,6 +630,7 @@ def main():
     print("\nKlart.")
     print(f"Layout: {DESIGNER[designval]['namn']}")
     print(f"PDF skapad: {output}")
+    print(f"Rapport skapad: {rapport}")
 
 
 if __name__ == "__main__":
