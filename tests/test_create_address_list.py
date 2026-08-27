@@ -69,6 +69,7 @@ class AddressListTests(unittest.TestCase):
                         "lastname",
                         "firstname",
                         "fullname",
+                        "birth",
                         "email",
                         "cellphone",
                         "homephone",
@@ -85,6 +86,34 @@ class AddressListTests(unittest.TestCase):
                 writer.writeheader()
 
             self.assertEqual(las_csv(csv_path), [])
+
+    def test_requires_birth_for_report_identity(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            csv_path = Path(tmpdir) / "contacts.csv"
+            with csv_path.open("w", encoding="utf-8", newline="") as fil:
+                writer = csv.DictWriter(
+                    fil,
+                    fieldnames=[
+                        "lastname",
+                        "firstname",
+                        "fullname",
+                        "email",
+                        "cellphone",
+                        "homephone",
+                        "address_line1",
+                        "address_line2",
+                        "address_city",
+                        "address_postalcode",
+                        "appt",
+                        "status",
+                        "inactive",
+                        "group_overseer",
+                    ],
+                )
+                writer.writeheader()
+
+            with self.assertRaisesRegex(ValueError, "birth"):
+                las_csv(csv_path)
 
     def test_creates_pdf_when_no_contact_rows_exist(self):
         if shutil.which("pdftotext") is None:

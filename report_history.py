@@ -54,8 +54,8 @@ def visningsnamn(person: Dict[str, Any]) -> str:
 def skapa_snapshot(poster: Iterable[Dict[str, str]]) -> Dict[str, Dict[str, Any]]:
     personer: Dict[str, Dict[str, Any]] = {}
     for rad in poster:
-        if not ren(rad.get("fullname")):
-            continue
+        if not ren(rad.get("fullname")) or not ren(rad.get("birth")):
+            raise ValueError("Alla personer i rapporten måste ha fullname och birth.")
         nyckel = personnyckel(rad)
         personer[nyckel] = {
             "fullname": ren(rad.get("fullname")),

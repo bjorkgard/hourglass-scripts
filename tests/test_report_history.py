@@ -109,6 +109,26 @@ class ReportHistoryTests(unittest.TestCase):
             self.assertIn("Borttagna namn: 1", text)
             self.assertIn("- Bengtsson, Bertil (1975-03-04)", text)
 
+    def test_rejects_rows_without_birth_before_updating_history(self):
+        from report_history import skapa_rapport
+
+        rows = [
+            {
+                "fullname": "Andersson, Anna",
+                "birth": "",
+                "email": "anna@example.com",
+            }
+        ]
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            history_path = root / "history" / "contact_history.json"
+
+            with self.assertRaisesRegex(ValueError, "fullname och birth"):
+                skapa_rapport(rows, history_path, root / "out")
+
+            self.assertFalse(history_path.exists())
+
 
 if __name__ == "__main__":
     unittest.main()

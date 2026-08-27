@@ -195,6 +195,7 @@ def las_csv(sokvag: Path) -> List[Dict[str, str]]:
         "lastname",
         "firstname",
         "fullname",
+        "birth",
         "email",
         "cellphone",
         "homephone",
