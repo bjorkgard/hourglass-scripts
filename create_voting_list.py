@@ -26,7 +26,7 @@ try:
     from reportlab.lib.styles import ParagraphStyle
     from reportlab.lib.units import mm
     from reportlab.pdfgen import canvas
-    from reportlab.platypus import Flowable, LongTable, Paragraph, SimpleDocTemplate, Spacer, TableStyle
+    from reportlab.platypus import Flowable, LongTable, PageBreak, Paragraph, SimpleDocTemplate, Spacer, TableStyle
 except ImportError:
     print("ReportLab saknas. Installera det med:")
     print("  python3 -m pip install reportlab")
@@ -48,6 +48,9 @@ STIL = {
     "grid": colors.HexColor("#CDD4D9"),
     "text": colors.HexColor("#20272C"),
 }
+
+ANTAL_KOLUMNER = 3
+RADER_PER_SIDA = 50
 
 
 class NumreradCanvas(canvas.Canvas):
@@ -220,10 +223,44 @@ def rostrad(namn: str, stil: ParagraphStyle, kolumnbredd: float):
     return rad
 
 
-def skapa_rosttabell(rostande: List[Dict[str, str]], stilar: Dict[str, ParagraphStyle], totalbredd: float):
-    namn = [html_escape(rad["fullname"]) for rad in rostande]
-    per_kolumn = (len(namn) + 2) // 3
-    kolumner = [namn[i * per_kolumn : (i + 1) * per_kolumn] for i in range(3)]
+def dela_upp_i_sidor(namn: List[str]) -> List[List[str]]:
+    namn_per_sida = RADER_PER_SIDA * ANTAL_KOLUMNER
+    if not namn:
+        return [[]]
+    return [namn[index : index + namn_per_sida] for index in range(0, len(namn), namn_per_sida)]
+
+
+def dela_upp_i_kolumner(namn: List[str]) -> List[List[str]]:
+    per_kolumn = (len(namn) + ANTAL_KOLUMNER - 1) // ANTAL_KOLUMNER
+    if per_kolumn == 0:
+        return [[] for _ in range(ANTAL_KOLUMNER)]
+    return [namn[i * per_kolumn : (i + 1) * per_kolumn] for i in range(ANTAL_KOLUMNER)]
+
+
+def skapa_tom_rosttabell(stilar: Dict[str, ParagraphStyle], totalbredd: float):
+    tabell = LongTable(
+        [[Paragraph("Inga röstberättigade personer hittades.", stilar["namn"])]],
+        colWidths=[totalbredd],
+        hAlign="LEFT",
+    )
+    tabell.setStyle(
+        TableStyle(
+            [
+                ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                ("TOPPADDING", (0, 0), (-1, -1), STIL["radpadding"]),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), STIL["radpadding"]),
+            ]
+        )
+    )
+    return tabell
+
+
+def skapa_rosttabell(namn: List[str], stilar: Dict[str, ParagraphStyle], totalbredd: float):
+    if not namn:
+        return skapa_tom_rosttabell(stilar, totalbredd)
+
+    kolumner = dela_upp_i_kolumner(namn)
     antal_rader = max((len(kolumn) for kolumn in kolumner), default=0)
     kolumnbredd = (totalbredd - 2 * STIL["kolumngap"]) / 3
 
@@ -235,11 +272,19 @@ def skapa_rosttabell(rostande: List[Dict[str, str]], stilar: Dict[str, Paragraph
                 rad.append(rostrad(kolumn[index], stilar["namn"], kolumnbredd))
             else:
                 rad.append("")
+            if len(rad) < ANTAL_KOLUMNER * 2 - 1:
+                rad.append("")
         data.append(rad)
 
     tabell = LongTable(
         data,
-        colWidths=[kolumnbredd, kolumnbredd, kolumnbredd],
+        colWidths=[
+            kolumnbredd,
+            STIL["kolumngap"],
+            kolumnbredd,
+            STIL["kolumngap"],
+            kolumnbredd,
+        ],
         hAlign="LEFT",
         splitByRow=1,
     )
@@ -252,9 +297,7 @@ def skapa_rosttabell(rostande: List[Dict[str, str]], stilar: Dict[str, Paragraph
                 ("TOPPADDING", (0, 0), (-1, -1), STIL["radpadding"]),
                 ("BOTTOMPADDING", (0, 0), (-1, -1), STIL["radpadding"]),
                 ("LINEBEFORE", (1, 0), (1, -1), 0.35, STIL["grid"]),
-                ("LINEBEFORE", (2, 0), (2, -1), 0.35, STIL["grid"]),
-                ("LEFTPADDING", (1, 0), (1, -1), STIL["kolumngap"]),
-                ("LEFTPADDING", (2, 0), (2, -1), STIL["kolumngap"]),
+                ("LINEBEFORE", (3, 0), (3, -1), 0.35, STIL["grid"]),
             ]
         )
     )
@@ -281,7 +324,11 @@ def skapa_pdf(poster: List[Dict[str, str]], output: Path):
 
     story = []
     story.extend(titelblock(stilar, totalbredd))
-    story.append(skapa_rosttabell(rostande, stilar, totalbredd))
+    namn = [html_escape(rad["fullname"]) for rad in rostande]
+    for sidindex, sidnamn in enumerate(dela_upp_i_sidor(namn)):
+        if sidindex:
+            story.append(PageBreak())
+        story.append(skapa_rosttabell(sidnamn, stilar, totalbredd))
     story.append(Spacer(1, 5 * mm))
     story.append(Paragraph(narvaro_text(len(rostande)), stilar["summering"]))
 

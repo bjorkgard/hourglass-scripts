@@ -1,10 +1,11 @@
+import csv
 import shutil
 import subprocess
 import tempfile
 import unittest
 from pathlib import Path
 
-from create_voting_list import STIL, filtrera_rostande, las_csv, narvaro_text, skapa_pdf
+from create_voting_list import RADER_PER_SIDA, STIL, dela_upp_i_sidor, filtrera_rostande, las_csv, narvaro_text, skapa_pdf
 
 
 EXAMPLE_CSV = Path(__file__).resolve().parents[1] / "example_csv" / "hourglass-contactlist.csv"
@@ -32,6 +33,38 @@ class VotingListTests(unittest.TestCase):
     def test_voting_list_uses_airier_row_spacing(self):
         self.assertEqual(STIL["radavstand"], 11.0)
         self.assertEqual(STIL["radpadding"], 1.15)
+
+    def test_page_chunks_preserve_sorted_ranges(self):
+        namn = [f"Person {nummer:03d}" for nummer in range(1, RADER_PER_SIDA * 3 + 5)]
+
+        sidor = dela_upp_i_sidor(namn)
+
+        self.assertEqual(sidor[0], namn[: RADER_PER_SIDA * 3])
+        self.assertEqual(sidor[1], namn[RADER_PER_SIDA * 3 :])
+
+    def test_creates_pdf_when_no_rows_match_voter_filter(self):
+        if shutil.which("pdftotext") is None:
+            self.skipTest("pdftotext saknas")
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            csv_path = Path(tmpdir) / "contacts.csv"
+            output = Path(tmpdir) / "rostlangd.pdf"
+            with csv_path.open("w", encoding="utf-8", newline="") as fil:
+                writer = csv.DictWriter(fil, fieldnames=["fullname", "baptism", "inactive"])
+                writer.writeheader()
+                writer.writerow({"fullname": "Ahlberg, Wendela", "baptism": "", "inactive": ""})
+                writer.writerow({"fullname": "Österlid, Isabel", "baptism": "2003-07-21", "inactive": "1"})
+
+            skapa_pdf(las_csv(csv_path), output)
+
+            text = subprocess.run(
+                ["pdftotext", str(output), "-"],
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout
+            self.assertIn("Inga röstberättigade personer hittades.", text)
+            self.assertIn("Av församlingens 0 döpta medlemmar var ____ närvarande.", text)
 
 
 @unittest.skipUnless(EXAMPLE_CSV.exists(), "example_csv/hourglass-contactlist.csv saknas")
