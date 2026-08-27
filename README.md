@@ -7,6 +7,8 @@ Projektet innehåller:
 - [Adresslista](docs/address-list.md) - skapar en svensk adresslista grupperad
   per grupptillsyningsman.
 - [Namnlista](docs/name-list.md) - skapar en namnlista grupperad per familj.
+- [Röstlängd](docs/voting-list.md) - skapar en lista över döpta aktiva personer
+  med kryssrutor för närvaro.
 
 ## Kom igång lokalt
 
