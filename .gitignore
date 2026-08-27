@@ -2,6 +2,11 @@
 example_csv/
 tmp/
 output/
+config.json
+in/*
+!in/.gitkeep
+out/*
+!out/.gitkeep
 *.pdf
 
 # Python bytecode and caches
