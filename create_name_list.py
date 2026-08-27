@@ -28,6 +28,7 @@ try:
     from reportlab.pdfgen import canvas
     from reportlab.platypus import (
         LongTable,
+        PageBreak,
         Paragraph,
         SimpleDocTemplate,
         Spacer,
@@ -47,8 +48,8 @@ STIL = {
     "botten": 11 * mm,
     "titelstorlek": 19,
     "textstorlek": 9.0,
-    "radavstand": 11.0,
-    "radpadding": 1.2,
+    "radavstand": 10.6,
+    "radpadding": 0.8,
     "footerstorlek": 7.2,
     "kolumngap": 6 * mm,
     "accent": colors.HexColor("#35536B"),
@@ -56,6 +57,9 @@ STIL = {
     "grid": colors.HexColor("#CDD4D9"),
     "text": colors.HexColor("#20272C"),
 }
+
+ANTAL_KOLUMNER = 2
+RADER_PER_SIDA = 52
 
 
 class NumreradCanvas(canvas.Canvas):
@@ -123,10 +127,11 @@ def las_csv(sokvag: Path) -> List[Dict[str, str]]:
 
     with sokvag.open("r", encoding="utf-8-sig", newline="") as fil:
         lasare = csv.DictReader(fil)
+        falt = set(lasare.fieldnames or [])
         poster = [dict(rad) for rad in lasare]
 
     krav = {"address_id", "familycontact", "lastname", "firstname", "fullname", "birth"}
-    saknas = sorted(krav - set(poster[0].keys() if poster else []))
+    saknas = sorted(krav - falt)
     if saknas:
         raise ValueError("CSV-filen saknar följande kolumner: " + ", ".join(saknas))
     return poster
@@ -236,11 +241,44 @@ def titelblock(stilar: Dict[str, ParagraphStyle], totalbredd: float):
     ]
 
 
-def skapa_namntabell(familjer: List[List[Dict[str, str]]], stilar: Dict[str, ParagraphStyle], totalbredd: float):
-    texter = [formatera_familjenamn(familj) for familj in familjer if formatera_familjenamn(familj)]
-    mitt = (len(texter) + 1) // 2
-    vanster = texter[:mitt]
-    hoger = texter[mitt:]
+def dela_upp_i_sidor(texter: List[str]) -> List[List[str]]:
+    namn_per_sida = RADER_PER_SIDA * ANTAL_KOLUMNER
+    if not texter:
+        return [[]]
+    return [texter[index : index + namn_per_sida] for index in range(0, len(texter), namn_per_sida)]
+
+
+def dela_upp_i_kolumner(texter: List[str]) -> List[List[str]]:
+    per_kolumn = (len(texter) + ANTAL_KOLUMNER - 1) // ANTAL_KOLUMNER
+    if per_kolumn == 0:
+        return [[] for _ in range(ANTAL_KOLUMNER)]
+    return [texter[i * per_kolumn : (i + 1) * per_kolumn] for i in range(ANTAL_KOLUMNER)]
+
+
+def skapa_tom_namntabell(stilar: Dict[str, ParagraphStyle], totalbredd: float):
+    tabell = LongTable(
+        [[Paragraph("Inga familjer hittades.", stilar["namn"])]],
+        colWidths=[totalbredd],
+        hAlign="LEFT",
+    )
+    tabell.setStyle(
+        TableStyle(
+            [
+                ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+                ("TOPPADDING", (0, 0), (-1, -1), STIL["radpadding"]),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), STIL["radpadding"]),
+            ]
+        )
+    )
+    return tabell
+
+
+def skapa_namntabell(texter: List[str], stilar: Dict[str, ParagraphStyle], totalbredd: float):
+    if not texter:
+        return skapa_tom_namntabell(stilar, totalbredd)
+
+    vanster, hoger = dela_upp_i_kolumner(texter)
     antal_rader = max(len(vanster), len(hoger))
 
     data = []
@@ -248,13 +286,18 @@ def skapa_namntabell(familjer: List[List[Dict[str, str]]], stilar: Dict[str, Par
         data.append(
             [
                 Paragraph(vanster[index], stilar["namn"]) if index < len(vanster) else "",
+                "",
                 Paragraph(hoger[index], stilar["namn"]) if index < len(hoger) else "",
             ]
         )
 
     tabell = LongTable(
         data,
-        colWidths=[(totalbredd - STIL["kolumngap"]) / 2, (totalbredd - STIL["kolumngap"]) / 2],
+        colWidths=[
+            (totalbredd - STIL["kolumngap"]) / 2,
+            STIL["kolumngap"],
+            (totalbredd - STIL["kolumngap"]) / 2,
+        ],
         hAlign="LEFT",
         splitByRow=1,
     )
@@ -267,7 +310,6 @@ def skapa_namntabell(familjer: List[List[Dict[str, str]]], stilar: Dict[str, Par
                 ("TOPPADDING", (0, 0), (-1, -1), STIL["radpadding"]),
                 ("BOTTOMPADDING", (0, 0), (-1, -1), STIL["radpadding"]),
                 ("LINEBEFORE", (1, 0), (1, -1), 0.35, STIL["grid"]),
-                ("LEFTPADDING", (1, 0), (1, -1), STIL["kolumngap"]),
             ]
         )
     )
@@ -294,7 +336,11 @@ def skapa_pdf(poster: List[Dict[str, str]], output: Path):
 
     story = []
     story.extend(titelblock(stilar, totalbredd))
-    story.append(skapa_namntabell(familjer, stilar, totalbredd))
+    texter = [formatera_familjenamn(familj) for familj in familjer if formatera_familjenamn(familj)]
+    for sidindex, sidtexter in enumerate(dela_upp_i_sidor(texter)):
+        if sidindex:
+            story.append(PageBreak())
+        story.append(skapa_namntabell(sidtexter, stilar, totalbredd))
 
     idag = date.today().isoformat()
     footer_info = {"datum": idag}

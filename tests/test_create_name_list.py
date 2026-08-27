@@ -1,3 +1,4 @@
+import csv
 import shutil
 import subprocess
 import tempfile
@@ -5,8 +6,10 @@ import unittest
 from pathlib import Path
 
 from create_name_list import (
+    RADER_PER_SIDA,
     STIL,
     bygg_familjer,
+    dela_upp_i_sidor,
     formatera_familjenamn,
     las_csv,
     skapa_pdf,
@@ -88,8 +91,45 @@ class NameListTests(unittest.TestCase):
     def test_name_list_uses_airier_single_page_layout(self):
         self.assertEqual(STIL["topp_mm"], 8)
         self.assertEqual(STIL["textstorlek"], 9.0)
-        self.assertEqual(STIL["radavstand"], 11.0)
-        self.assertEqual(STIL["radpadding"], 1.2)
+        self.assertEqual(STIL["radavstand"], 10.6)
+        self.assertEqual(STIL["radpadding"], 0.8)
+
+    def test_page_chunks_preserve_sorted_ranges(self):
+        namn = [f"<b>Familj {nummer:03d}</b> Namn" for nummer in range(1, RADER_PER_SIDA * 2 + 5)]
+
+        sidor = dela_upp_i_sidor(namn)
+
+        self.assertEqual(sidor[0], namn[: RADER_PER_SIDA * 2])
+        self.assertEqual(sidor[1], namn[RADER_PER_SIDA * 2 :])
+
+    def test_reads_header_only_csv_as_empty_export(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            csv_path = Path(tmpdir) / "contacts.csv"
+            with csv_path.open("w", encoding="utf-8", newline="") as fil:
+                writer = csv.DictWriter(
+                    fil,
+                    fieldnames=["address_id", "familycontact", "lastname", "firstname", "fullname", "birth"],
+                )
+                writer.writeheader()
+
+            self.assertEqual(las_csv(csv_path), [])
+
+    def test_creates_pdf_when_no_families_exist(self):
+        if shutil.which("pdftotext") is None:
+            self.skipTest("pdftotext saknas")
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output = Path(tmpdir) / "namnlista.pdf"
+            skapa_pdf([], output)
+
+            text = subprocess.run(
+                ["pdftotext", str(output), "-"],
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout
+            self.assertIn("Namnlista", text)
+            self.assertIn("Inga familjer hittades.", text)
 
 
 @unittest.skipUnless(EXAMPLE_CSV.exists(), "example_csv/hourglass-contactlist.csv saknas")

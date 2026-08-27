@@ -184,6 +184,7 @@ def las_csv(sokvag: Path) -> List[Dict[str, str]]:
 
     with sokvag.open("r", encoding="utf-8-sig", newline="") as fil:
         lasare = csv.DictReader(fil)
+        falt = set(lasare.fieldnames or [])
         poster = [dict(rad) for rad in lasare]
 
     krav = {
@@ -202,7 +203,7 @@ def las_csv(sokvag: Path) -> List[Dict[str, str]]:
         "inactive",
         "group_overseer",
     }
-    saknas = sorted(krav - set(poster[0].keys() if poster else []))
+    saknas = sorted(krav - falt)
     if saknas:
         raise ValueError("CSV-filen saknar följande kolumner: " + ", ".join(saknas))
     return poster

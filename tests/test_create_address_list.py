@@ -1,3 +1,4 @@
+import csv
 import shutil
 import subprocess
 import tempfile
@@ -34,6 +35,61 @@ class AddressListTests(unittest.TestCase):
             "Ä, P, Overksam",
         )
         self.assertEqual(ovrligt({"appt": "MS", "status": "", "inactive": ""}), "FT")
+
+    def test_reads_header_only_csv_as_empty_export(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            csv_path = Path(tmpdir) / "contacts.csv"
+            with csv_path.open("w", encoding="utf-8", newline="") as fil:
+                writer = csv.DictWriter(
+                    fil,
+                    fieldnames=[
+                        "lastname",
+                        "firstname",
+                        "fullname",
+                        "email",
+                        "cellphone",
+                        "homephone",
+                        "address_line1",
+                        "address_line2",
+                        "address_city",
+                        "address_postalcode",
+                        "appt",
+                        "status",
+                        "inactive",
+                        "group_overseer",
+                    ],
+                )
+                writer.writeheader()
+
+            self.assertEqual(las_csv(csv_path), [])
+
+    def test_creates_pdf_when_no_contact_rows_exist(self):
+        if shutil.which("pdftotext") is None:
+            self.skipTest("pdftotext saknas")
+
+        kt = {
+            "namn": "Test Kretstillsyningsman",
+            "adress": "Testgatan 1",
+            "postnummer": "12345",
+            "ort": "Teststad",
+            "mobiltelefon": "070-000 00 00",
+            "telefon": "",
+            "epost": "test@example.com",
+        }
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output = Path(tmpdir) / "adresslista.pdf"
+            skapa_pdf([], output, "2", kt, [])
+
+            text = subprocess.run(
+                ["pdftotext", str(output), "-"],
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout
+            self.assertIn("Adresslista", text)
+            self.assertIn("Kretstillsyningsman", text)
+            self.assertIn("Test Kretstillsyningsman", text)
 
 
 @unittest.skipUnless(EXAMPLE_CSV.exists(), "example_csv/hourglass-contactlist.csv saknas")
