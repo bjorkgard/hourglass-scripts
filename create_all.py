@@ -157,7 +157,12 @@ def komplett_kt(kt: Any) -> bool:
 
 
 def komplett_gruppordning(gruppordning: Any, grupper: List[str]) -> bool:
-    return isinstance(gruppordning, list) and set(gruppordning) == set(grupper)
+    return (
+        isinstance(gruppordning, list)
+        and len(gruppordning) == len(grupper)
+        and len(set(gruppordning)) == len(gruppordning)
+        and set(gruppordning) == set(grupper)
+    )
 
 
 def hamta_adress_config(

@@ -108,6 +108,45 @@ class CreateAllTests(unittest.TestCase):
             "test@example.com",
         )
 
+    def test_prompts_when_cached_group_order_contains_duplicates(self):
+        from create_all import hamta_adress_config
+
+        poster = [
+            {"group_overseer": "Björkgård, Nathanael"},
+            {"group_overseer": "Sundberg, Joel"},
+        ]
+        config = {
+            "adresslista": {
+                "designval": "2",
+                "gruppordning": [
+                    "Björkgård, Nathanael",
+                    "Björkgård, Nathanael",
+                    "Sundberg, Joel",
+                ],
+                "kretstillsyningsman": {
+                    "namn": "Test Kretstillsyningsman",
+                    "adress": "Testgatan 1",
+                    "postnummer": "12345",
+                    "ort": "Teststad",
+                    "mobiltelefon": "070-000 00 00",
+                    "telefon": "",
+                    "epost": "test@example.com",
+                },
+            }
+        }
+
+        with (
+            patch("builtins.input", return_value="2,1"),
+            redirect_stdout(StringIO()),
+        ):
+            adress_config, changed = hamta_adress_config(config, poster)
+
+        self.assertTrue(changed)
+        self.assertEqual(
+            adress_config["gruppordning"],
+            ["Sundberg, Joel", "Björkgård, Nathanael"],
+        )
+
     def test_reconfigure_ignores_existing_config(self):
         from create_all import hamta_adress_config
 
