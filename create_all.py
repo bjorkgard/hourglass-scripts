@@ -28,6 +28,7 @@ from create_address_list import (
 )
 from create_name_list import las_csv as name_las_csv
 from create_name_list import skapa_pdf as skapa_namn_pdf
+from create_service_group_list import skapa_pdf as skapa_tjanstegrupper_pdf
 from create_voting_list import las_csv as voting_las_csv
 from create_voting_list import skapa_pdf as skapa_rost_pdf
 from report_history import skapa_rapport
@@ -219,6 +220,7 @@ def run_all(root: Path | None = None, reconfigure: bool = False) -> List[Path]:
         out_dir / f"Adresslista_{idag}.pdf",
         out_dir / f"Namnlista_{idag}.pdf",
         out_dir / f"Röstlängd_{idag}.pdf",
+        out_dir / f"Tjänstegrupper_{idag}.pdf",
     ]
 
     skapa_adress_pdf(
@@ -230,6 +232,7 @@ def run_all(root: Path | None = None, reconfigure: bool = False) -> List[Path]:
     )
     skapa_namn_pdf(namn_poster, outputs[1])
     skapa_rost_pdf(rost_poster, outputs[2])
+    skapa_tjanstegrupper_pdf(adress_poster, outputs[3], adress_config["gruppordning"])
     skapa_rapport(adress_poster, root / HISTORY_FIL, out_dir)
 
     return outputs
@@ -237,7 +240,7 @@ def run_all(root: Path | None = None, reconfigure: bool = False) -> List[Path]:
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Skapa adresslista, namnlista och röstlängd från en CSV-fil i in/."
+        description="Skapa adresslista, namnlista, röstlängd och tjänstegrupper från en CSV-fil i in/."
     )
     parser.add_argument(
         "--reconfigure",

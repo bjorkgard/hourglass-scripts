@@ -9,6 +9,8 @@ Projektet innehåller:
 - [Namnlista](docs/name-list.md) - skapar en namnlista grupperad per familj.
 - [Röstlängd](docs/voting-list.md) - skapar en lista över döpta aktiva personer
   med kryssrutor för närvaro.
+- [Tjänstegrupper](docs/service-group-list.md) - skapar en fyrkolumnslista över
+  aktiva personer grupperade per tjänstegrupp.
 
 ## Kom igång lokalt
 
@@ -51,7 +53,8 @@ Den lokala historiken sparas i `history/contact_history.json` och ignoreras av
 git.
 
 Första gången frågar kommandot efter de uppgifter som behövs för adresslistan
-och sparar dem i en lokal `config.json`. Nästa gång används config-filen
+och tjänstegrupperna och sparar dem i en lokal `config.json`. Tjänstegrupperna
+använder samma gruppordning som adresslistan. Nästa gång används config-filen
 automatiskt. Om du vill skapa om config-filen kör du:
 
 ```bash

@@ -178,7 +178,7 @@ class CreateAllTests(unittest.TestCase):
         self.assertEqual(adress_config["designval"], "3")
         self.assertEqual(adress_config["kretstillsyningsman"]["namn"], "Nytt Namn")
 
-    def test_run_all_creates_three_pdfs_and_saves_config(self):
+    def test_run_all_creates_four_pdfs_and_saves_config(self):
         from create_all import run_all
 
         rows = [{"group_overseer": "Björkgård, Nathanael"}]
@@ -200,6 +200,7 @@ class CreateAllTests(unittest.TestCase):
                 patch("create_all.skapa_adress_pdf") as skapa_adress_pdf,
                 patch("create_all.skapa_namn_pdf") as skapa_namn_pdf,
                 patch("create_all.skapa_rost_pdf") as skapa_rost_pdf,
+                patch("create_all.skapa_tjanstegrupper_pdf") as skapa_tjanstegrupper_pdf,
                 patch("create_all.skapa_rapport") as skapa_rapport,
                 redirect_stdout(StringIO()),
             ):
@@ -212,6 +213,7 @@ class CreateAllTests(unittest.TestCase):
                     f"Adresslista_{idag}.pdf",
                     f"Namnlista_{idag}.pdf",
                     f"Röstlängd_{idag}.pdf",
+                    f"Tjänstegrupper_{idag}.pdf",
                 },
             )
             self.assertTrue((root / "config.json").exists())
@@ -220,6 +222,11 @@ class CreateAllTests(unittest.TestCase):
             self.assertEqual(skapa_adress_pdf.call_args.args[1].parent.resolve(), out_dir)
             self.assertEqual(skapa_namn_pdf.call_args.args[1].parent.resolve(), out_dir)
             self.assertEqual(skapa_rost_pdf.call_args.args[1].parent.resolve(), out_dir)
+            self.assertEqual(skapa_tjanstegrupper_pdf.call_args.args[1].parent.resolve(), out_dir)
+            self.assertEqual(
+                skapa_tjanstegrupper_pdf.call_args.args[2],
+                ["Björkgård, Nathanael"],
+            )
             self.assertEqual(skapa_rapport.call_count, 1)
             self.assertEqual(skapa_rapport.call_args.args[0], rows)
             self.assertEqual(
