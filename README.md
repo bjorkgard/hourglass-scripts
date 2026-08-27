@@ -35,6 +35,26 @@ python3 -m pip install reportlab
 Läs respektive skriptdokumentation för hur skripten körs och vilka fält som
 behövs i CSV-filen.
 
+## Skapa alla listor
+
+Lägg CSV-exporten från Hourglass i `in/` och kör:
+
+```bash
+python3 create_all.py
+```
+
+PDF-filerna skapas i `out/`.
+
+Första gången frågar kommandot efter de uppgifter som behövs för adresslistan
+och sparar dem i en lokal `config.json`. Nästa gång används config-filen
+automatiskt. Om du vill skapa om config-filen kör du:
+
+```bash
+python3 create_all.py --reconfigure
+```
+
+Om `in/` innehåller flera CSV-filer frågar kommandot vilken som ska användas.
+
 ## Tester
 
 Kör alla tester:
