@@ -30,9 +30,11 @@ from create_name_list import las_csv as name_las_csv
 from create_name_list import skapa_pdf as skapa_namn_pdf
 from create_voting_list import las_csv as voting_las_csv
 from create_voting_list import skapa_pdf as skapa_rost_pdf
+from report_history import skapa_rapport
 
 
 CONFIG_FIL = "config.json"
+HISTORY_FIL = "history/contact_history.json"
 IN_MAPP = "in"
 OUT_MAPP = "out"
 KT_FALT = ["namn", "adress", "postnummer", "ort", "mobiltelefon", "telefon", "epost"]
@@ -228,6 +230,7 @@ def run_all(root: Path | None = None, reconfigure: bool = False) -> List[Path]:
     )
     skapa_namn_pdf(namn_poster, outputs[1])
     skapa_rost_pdf(rost_poster, outputs[2])
+    skapa_rapport(adress_poster, root / HISTORY_FIL, out_dir)
 
     return outputs
 

@@ -3,7 +3,10 @@ import shutil
 import subprocess
 import tempfile
 import unittest
+from contextlib import redirect_stdout
+from io import StringIO
 from pathlib import Path
+from unittest.mock import patch
 
 from create_address_list import (
     adress,
@@ -19,6 +22,26 @@ EXAMPLE_CSV = Path(__file__).resolve().parents[1] / "example_csv" / "hourglass-c
 
 
 class AddressListTests(unittest.TestCase):
+    def test_history_path_uses_parent_when_output_is_in_out_directory(self):
+        from create_address_list import history_path_for_output
+
+        output = Path("/tmp/hourglass/out/adresslista.pdf")
+
+        self.assertEqual(
+            history_path_for_output(output),
+            Path("/tmp/hourglass/history/contact_history.json"),
+        )
+
+    def test_history_path_uses_output_directory_when_output_is_not_in_out_directory(self):
+        from create_address_list import history_path_for_output
+
+        output = Path("/tmp/hourglass/adresslista.pdf")
+
+        self.assertEqual(
+            history_path_for_output(output),
+            Path("/tmp/hourglass/history/contact_history.json"),
+        )
+
     def test_formats_address_from_hourglass_columns(self):
         rad = {
             "address_line1": "Kabelgatan 37D",
@@ -90,6 +113,43 @@ class AddressListTests(unittest.TestCase):
             self.assertIn("Adresslista", text)
             self.assertIn("Kretstillsyningsman", text)
             self.assertIn("Test Kretstillsyningsman", text)
+
+    def test_main_creates_report_next_to_output_pdf(self):
+        from create_address_list import main
+
+        rows = [
+            {
+                "fullname": "Andersson, Anna",
+                "birth": "1980-01-02",
+                "group_overseer": "Björkgård, Nathanael",
+            }
+        ]
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            csv_path = root / "contacts.csv"
+            output = root / "out" / "adresslista.pdf"
+            output.parent.mkdir()
+            csv_path.write_text("fullname,birth,group_overseer\n", encoding="utf-8")
+
+            svar = iter(["2", "1", "Test KT", "", "", "", "", "", "kt@example.com"])
+            with (
+                patch("sys.argv", ["create_address_list.py", str(csv_path), "-o", str(output)]),
+                patch("builtins.input", side_effect=lambda _prompt="": next(svar)),
+                patch("create_address_list.las_csv", return_value=rows),
+                patch("create_address_list.skapa_pdf"),
+                patch("create_address_list.skapa_rapport") as skapa_rapport,
+                redirect_stdout(StringIO()),
+            ):
+                main()
+
+            self.assertEqual(skapa_rapport.call_count, 1)
+            self.assertEqual(skapa_rapport.call_args.args[0], rows)
+            self.assertEqual(
+                skapa_rapport.call_args.args[1].resolve(),
+                (root / "history" / "contact_history.json").resolve(),
+            )
+            self.assertEqual(skapa_rapport.call_args.args[2].resolve(), output.parent.resolve())
 
 
 @unittest.skipUnless(EXAMPLE_CSV.exists(), "example_csv/hourglass-contactlist.csv saknas")

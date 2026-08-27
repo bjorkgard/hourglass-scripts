@@ -200,6 +200,7 @@ class CreateAllTests(unittest.TestCase):
                 patch("create_all.skapa_adress_pdf") as skapa_adress_pdf,
                 patch("create_all.skapa_namn_pdf") as skapa_namn_pdf,
                 patch("create_all.skapa_rost_pdf") as skapa_rost_pdf,
+                patch("create_all.skapa_rapport") as skapa_rapport,
                 redirect_stdout(StringIO()),
             ):
                 outputs = run_all(root=root)
@@ -219,6 +220,13 @@ class CreateAllTests(unittest.TestCase):
             self.assertEqual(skapa_adress_pdf.call_args.args[1].parent.resolve(), out_dir)
             self.assertEqual(skapa_namn_pdf.call_args.args[1].parent.resolve(), out_dir)
             self.assertEqual(skapa_rost_pdf.call_args.args[1].parent.resolve(), out_dir)
+            self.assertEqual(skapa_rapport.call_count, 1)
+            self.assertEqual(skapa_rapport.call_args.args[0], rows)
+            self.assertEqual(
+                skapa_rapport.call_args.args[1].resolve(),
+                (root / "history" / "contact_history.json").resolve(),
+            )
+            self.assertEqual(skapa_rapport.call_args.args[2].resolve(), out_dir)
 
 
 if __name__ == "__main__":
