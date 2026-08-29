@@ -48,7 +48,8 @@ python3 create_all.py
 PDF-filerna skapas i `out/`.
 Samtidigt skapas en TXT-rapport, `Rapport_ÅÅÅÅ-MM-DD.txt`, som jämför
 kontaktuppgifterna med senaste körningen och visar nya, uppdaterade och
-borttagna namn. Jämförelsen använder `fullname` + `birth` som personnyckel.
+borttagna namn. Jämförelsen använder `fullname` + `birth` som personnyckel,
+där saknat födelsedatum räknas som `0`.
 Den lokala historiken sparas i `history/contact_history.json` och ignoreras av
 git.
 

@@ -110,4 +110,5 @@ Skriptet fyller automatiskt i kolumnen `Övrigt` baserat på Hourglass-data:
 
 När skriptet är klart skrivs vald layout, sökvägen till den skapade PDF-filen
 och sökvägen till TXT-rapporten ut i terminalen. Rapporten jämför med senaste
-lokala historik och använder `fullname` + `birth` som personnyckel.
+lokala historik och använder `fullname` + `birth` som personnyckel, där saknat
+födelsedatum räknas som `0`.

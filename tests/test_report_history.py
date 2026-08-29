@@ -109,7 +109,7 @@ class ReportHistoryTests(unittest.TestCase):
             self.assertIn("Borttagna namn: 1", text)
             self.assertIn("- Bengtsson, Bertil (1975-03-04)", text)
 
-    def test_rejects_rows_without_birth_before_updating_history(self):
+    def test_uses_zero_for_rows_without_birth(self):
         from report_history import skapa_rapport
 
         rows = [
@@ -124,7 +124,45 @@ class ReportHistoryTests(unittest.TestCase):
             root = Path(tmpdir)
             history_path = root / "history" / "contact_history.json"
 
-            with self.assertRaisesRegex(ValueError, "fullname och birth"):
+            report_path = skapa_rapport(rows, history_path, root / "out", datum="2026-08-29")
+
+            text = report_path.read_text(encoding="utf-8")
+            self.assertIn("- Andersson, Anna (0)", text)
+
+            history = json.loads(history_path.read_text(encoding="utf-8"))
+            self.assertEqual(
+                history["personer"]["andersson, anna\0" + "0"],
+                {
+                    "fullname": "Andersson, Anna",
+                    "birth": "0",
+                    "kontakt": {
+                        "address_line1": "",
+                        "address_line2": "",
+                        "address_postalcode": "",
+                        "address_city": "",
+                        "cellphone": "",
+                        "homephone": "",
+                        "email": "anna@example.com",
+                    },
+                },
+            )
+
+    def test_rejects_rows_without_fullname_before_updating_history(self):
+        from report_history import skapa_rapport
+
+        rows = [
+            {
+                "fullname": "",
+                "birth": "1980-01-02",
+                "email": "anna@example.com",
+            }
+        ]
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            history_path = root / "history" / "contact_history.json"
+
+            with self.assertRaisesRegex(ValueError, "fullname"):
                 skapa_rapport(rows, history_path, root / "out")
 
             self.assertFalse(history_path.exists())

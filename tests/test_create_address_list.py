@@ -87,7 +87,7 @@ class AddressListTests(unittest.TestCase):
 
             self.assertEqual(las_csv(csv_path), [])
 
-    def test_requires_birth_for_report_identity(self):
+    def test_requires_birth_column_for_report_identity(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             csv_path = Path(tmpdir) / "contacts.csv"
             with csv_path.open("w", encoding="utf-8", newline="") as fil:

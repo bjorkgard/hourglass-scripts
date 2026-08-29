@@ -39,8 +39,12 @@ def svensk_sortnyckel(text: str) -> str:
     return "".join(ersattningar.get(tecken, tecken) for tecken in text)
 
 
+def normalisera_birth(varde: str | None) -> str:
+    return ren(varde) or "0"
+
+
 def personnyckel(rad: Dict[str, str]) -> str:
-    return f"{ren(rad.get('fullname')).casefold()}\0{ren(rad.get('birth'))}"
+    return f"{ren(rad.get('fullname')).casefold()}\0{normalisera_birth(rad.get('birth'))}"
 
 
 def visningsnamn(person: Dict[str, Any]) -> str:
@@ -54,12 +58,12 @@ def visningsnamn(person: Dict[str, Any]) -> str:
 def skapa_snapshot(poster: Iterable[Dict[str, str]]) -> Dict[str, Dict[str, Any]]:
     personer: Dict[str, Dict[str, Any]] = {}
     for rad in poster:
-        if not ren(rad.get("fullname")) or not ren(rad.get("birth")):
-            raise ValueError("Alla personer i rapporten måste ha fullname och birth.")
+        if not ren(rad.get("fullname")):
+            raise ValueError("Alla personer i rapporten måste ha fullname.")
         nyckel = personnyckel(rad)
         personer[nyckel] = {
             "fullname": ren(rad.get("fullname")),
-            "birth": ren(rad.get("birth")),
+            "birth": normalisera_birth(rad.get("birth")),
             "kontakt": {falt: ren(rad.get(falt)) for falt in KONTAKTFALT},
         }
     return personer
